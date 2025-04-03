@@ -19,6 +19,8 @@ def get_supabase_sql_editor_url(supabase_url):
         if '//' in supabase_url and 'supabase' in supabase_url:
             parts = supabase_url.split('//')
             if len(parts) > 1:
+                if str.find(parts[1], "localhost"):
+                    return f"{parts[1]}/sql/new"
                 domain_parts = parts[1].split('.')
                 if len(domain_parts) > 0:
                     project_ref = domain_parts[0]

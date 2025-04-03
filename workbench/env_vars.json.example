@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "lmstudio": {
+      "LLM_PROVIDER": "LMStudio",
+      "BASE_URL": "http://localhost:1234/v1",
+      "LLM_API_KEY": "NOT_REQUIRED",
+      "PRIMARY_MODEL": "qwen2.5-coder-32b-instruct",
+      "REASONER_MODEL": "qwq-32b",
+      "EMBEDDING_PROVIDER": "LMStudio",
+      "EMBEDDING_BASE_URL": "http://localhost:1234/v1",
+      "EMBEDDING_MODEL": "text-embedding-snowflake-arctic-embed-l-v2.0",
+      "EMBEDDING_MODEL_VECTOR_SIZE": 1024,
+      "SUPABASE_URL": "http://host.docker.internal:8000",
+      "SUPABASE_SERVICE_KEY": "---your supabase service key from local-ai-packaged repo---",
+      "OPENAI_API_KEY": "---your openai api key---",
+      "EMBEDDING_API_KEY": "NOT_REQUIRED"
+    }
+  },
+  "current_profile": "lmstudio"
+}

@@ -123,7 +123,8 @@ def main():
         "--name", "archon-container",
         "-p", "8501:8501",
         "-p", "8100:8100",
-        "--add-host", "host.docker.internal:host-gateway"
+        "--add-host", "host.docker.internal:host-gateway",
+        "-v", f"{os.path.abspath('./workbench')}:/app/workbench"
     ]
     
     # Add environment variables if .env exists

@@ -1,11 +1,13 @@
 # Folders
-workbench
 __pycache__
 venv
 .langgraph_api
+envs
+.vscode
 
 # Files
 .env
 .env.temp
 .env.test
 env_vars.json
+logs.txt

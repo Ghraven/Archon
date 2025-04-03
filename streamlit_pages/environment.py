@@ -3,6 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from archon.local_llm_providers import LocalLLMProvider
 from utils.utils import (
     get_env_var, save_env_var, reload_archon_graph, 
     get_current_profile, set_current_profile, get_all_profiles,
@@ -106,12 +107,14 @@ def environment_tab():
         "OpenAI": "https://api.openai.com/v1",
         "Anthropic": "https://api.anthropic.com/v1",
         "OpenRouter": "https://openrouter.ai/api/v1",
-        "Ollama": "http://localhost:11434/v1"
+        LocalLLMProvider.OLLAMA.value: "http://localhost:11434/v1",
+        LocalLLMProvider.LMSTUDIO.value: "http://localhost:1234/v1"
     }
     
     embedding_default_urls = {
         "OpenAI": "https://api.openai.com/v1",
-        "Ollama": "http://localhost:11434/v1"
+        LocalLLMProvider.OLLAMA.value: "http://localhost:11434/v1",
+        LocalLLMProvider.LMSTUDIO.value: "http://localhost:1234/v1"
     }
     
     # Initialize session state for provider selections if not already set
@@ -125,7 +128,7 @@ def environment_tab():
     st.subheader("1. Select Your LLM Provider")
     
     # LLM Provider dropdown
-    llm_providers = ["OpenAI", "Anthropic", "OpenRouter", "Ollama"]
+    llm_providers = ["OpenAI", "Anthropic", "OpenRouter", LocalLLMProvider.OLLAMA.value, LocalLLMProvider.LMSTUDIO.value]
     
     selected_llm_provider = st.selectbox(
         "LLM Provider",
@@ -143,7 +146,7 @@ def environment_tab():
     st.subheader("2. Select Your Embedding Model Provider")
     
     # Embedding Provider dropdown
-    embedding_providers = ["OpenAI", "Ollama"]
+    embedding_providers = ["OpenAI", LocalLLMProvider.OLLAMA.value, LocalLLMProvider.LMSTUDIO.value]
     
     selected_embedding_provider = st.selectbox(
         "Embedding Provider",
@@ -176,7 +179,8 @@ def environment_tab():
                         "OpenAI: https://api.openai.com/v1\n\n" + \
                         "Anthropic: https://api.anthropic.com/v1\n\n" + \
                         "OpenRouter: https://openrouter.ai/api/v1\n\n" + \
-                        "Ollama: http://localhost:11434/v1"
+                        "Ollama: http://localhost:11434/v1\n\n" + \
+                        "LMStudio: http://localhost:1234/v1"
         
         # Get current BASE_URL or use default for selected provider
         current_base_url = profile_env_vars.get("BASE_URL", llm_default_urls.get(selected_llm_provider, ""))
@@ -198,13 +202,15 @@ def environment_tab():
                        "For OpenAI: https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key\n\n" + \
                        "For Anthropic: https://console.anthropic.com/account/keys\n\n" + \
                        "For OpenRouter: https://openrouter.ai/keys\n\n" + \
-                       "For Ollama, no need to set this unless you specifically configured an API key"
+                       "For Ollama, no need to set this unless you specifically configured an API key\n\n" + \
+                       "For LMStudio, no need to set this unless you specifically configured an API key"
         
         # Get current API_KEY or set default for Ollama
         current_api_key = profile_env_vars.get("LLM_API_KEY", "")
         
         # If provider is Ollama and LLM_API_KEY is empty or provider changed, set to NOT_REQUIRED
-        if selected_llm_provider == "Ollama" and (not current_api_key or profile_env_vars.get("LLM_PROVIDER", "") != selected_llm_provider):
+        #if (selected_llm_provider == "Ollama" or selected_llm_provider == "LMStudio") and (not current_api_key or profile_env_vars.get("LLM_PROVIDER", "") != selected_llm_provider):
+        if selected_llm_provider in [provider.value for provider in LocalLLMProvider] and (not current_api_key or profile_env_vars.get("LLM_PROVIDER", "") != selected_llm_provider):
             current_api_key = "NOT_REQUIRED"
         
         # If there's already a value, show asterisks in the placeholder
@@ -219,7 +225,7 @@ def environment_tab():
         # Only update if user entered something (to avoid overwriting with empty string)
         if api_key:
             updated_values["LLM_API_KEY"] = api_key
-        elif selected_llm_provider == "Ollama" and (not current_api_key or current_api_key == "NOT_REQUIRED"):
+        elif (selected_llm_provider in [provider.value for provider in LocalLLMProvider]) and (not current_api_key or current_api_key == "NOT_REQUIRED"):
             updated_values["LLM_API_KEY"] = "NOT_REQUIRED"
         
         # PRIMARY_MODEL
@@ -256,7 +262,8 @@ def environment_tab():
         # EMBEDDING_BASE_URL
         embedding_base_url_help = "Base URL for your embedding provider:\n\n" + \
                                  "OpenAI: https://api.openai.com/v1\n\n" + \
-                                 "Ollama: http://localhost:11434/v1"
+                                 "Ollama: http://localhost:11434/v1\n\n" + \
+                                 "LMStudio: http://localhost:1234/v1"
         
         # Get current EMBEDDING_BASE_URL or use default for selected provider
         current_embedding_base_url = profile_env_vars.get("EMBEDDING_BASE_URL", embedding_default_urls.get(selected_embedding_provider, ""))
@@ -276,13 +283,14 @@ def environment_tab():
         # EMBEDDING_API_KEY
         embedding_api_key_help = "API key for your embedding provider:\n\n" + \
                                 "For OpenAI: https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key\n\n" + \
-                                "For Ollama, no need to set this unless you specifically configured an API key"
+                                "For Ollama, no need to set this unless you specifically configured an API key\n\n" + \
+                                "For LMStudio, no need to set this unless you specifically configured an API key"
         
         # Get current EMBEDDING_API_KEY or set default for Ollama
         current_embedding_api_key = profile_env_vars.get("EMBEDDING_API_KEY", "")
         
         # If provider is Ollama and EMBEDDING_API_KEY is empty or provider changed, set to NOT_REQUIRED
-        if selected_embedding_provider == "Ollama" and (not current_embedding_api_key or profile_env_vars.get("EMBEDDING_PROVIDER", "") != selected_embedding_provider):
+        if (selected_llm_provider in [provider.value for provider in LocalLLMProvider]) and (not current_embedding_api_key or profile_env_vars.get("EMBEDDING_PROVIDER", "") != selected_embedding_provider):
             current_embedding_api_key = "NOT_REQUIRED"
         
         # If there's already a value, show asterisks in the placeholder
@@ -297,13 +305,14 @@ def environment_tab():
         # Only update if user entered something (to avoid overwriting with empty string)
         if embedding_api_key:
             updated_values["EMBEDDING_API_KEY"] = embedding_api_key
-        elif selected_embedding_provider == "Ollama" and (not current_embedding_api_key or current_embedding_api_key == "NOT_REQUIRED"):
+        elif (selected_embedding_provider in [provider.value for provider in LocalLLMProvider]) and (not current_embedding_api_key or current_embedding_api_key == "NOT_REQUIRED"):
             updated_values["EMBEDDING_API_KEY"] = "NOT_REQUIRED"
         
         # EMBEDDING_MODEL
         embedding_model_help = "Embedding model you want to use\n\n" + \
                               "Example for Ollama: nomic-embed-text\n\n" + \
                               "Example for OpenAI: text-embedding-3-small"
+        embedding_model_vector_size_help = "Vector size of your embedding model"
         
         embedding_model = st.text_input(
             "EMBEDDING_MODEL:",
@@ -311,7 +320,18 @@ def environment_tab():
             help=embedding_model_help,
             key="input_EMBEDDING_MODEL"
         )
-        updated_values["EMBEDDING_MODEL"] = embedding_model
+        
+        # this is not currently referenced elsewhere
+        # TODO: if this value is set, use it for the database tab
+        #if (selected_llm_provider == "Ollama" or selected_llm_provider == "LMStudio"):
+        if selected_llm_provider in [provider.value for provider in LocalLLMProvider]:
+            embedding_model_vector_size = st.text_input(
+                "EMBEDDING_MODEL_VECTOR_SIZE:",
+                value=profile_env_vars.get("EMBEDDING_MODEL_VECTOR_SIZE", ""),
+                help=embedding_model_vector_size_help,
+                key="input_EMBEDDING_MODEL_VECTOR_SIZE"
+                )
+            updated_values["EMBEDDING_MODEL_VECTOR_SIZE"] = embedding_model_vector_size
         
         st.markdown("---")
         

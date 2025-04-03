@@ -13,6 +13,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from archon.local_llm_providers import LocalLLMProvider
 
 # Load environment variables from .env file
 load_dotenv()
@@ -388,7 +389,8 @@ def get_clients():
     provider = get_env_var('EMBEDDING_PROVIDER') or 'OpenAI'
     
     # Setup OpenAI client for LLM
-    if provider == "Ollama":
+    #if provider == "Ollama" or provider == "LMStudio":
+    if provider in [p.value for p in LocalLLMProvider]:
         if api_key == "NOT_REQUIRED":
             api_key = "ollama"  # Use a dummy key for Ollama
         embedding_client = AsyncOpenAI(base_url=base_url, api_key=api_key)
@@ -396,7 +398,7 @@ def get_clients():
         embedding_client = AsyncOpenAI(base_url=base_url, api_key=api_key)
 
     # Supabase client setup
-    supabase = None
+    supabase = None # type: ignore
     supabase_url = get_env_var("SUPABASE_URL")
     supabase_key = get_env_var("SUPABASE_SERVICE_KEY")
     if supabase_url and supabase_key:

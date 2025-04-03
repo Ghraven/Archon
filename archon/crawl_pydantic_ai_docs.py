@@ -18,6 +18,7 @@ import html2text
 
 # Add the parent directory to sys.path to allow importing from the parent directory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from archon.local_llm_providers import LocalLLMProvider
 from utils.utils import get_env_var, get_clients
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
@@ -37,7 +38,7 @@ api_key = get_env_var('LLM_API_KEY') or 'no-api-key-provided'
 provider = get_env_var('LLM_PROVIDER') or 'OpenAI'
 
 # Setup OpenAI client for LLM
-if provider == "Ollama":
+if provider in [member.value for member in LocalLLMProvider]:
     if api_key == "NOT_REQUIRED":
         api_key = "ollama"  # Use a dummy key for Ollama
     llm_client = AsyncOpenAI(base_url=base_url, api_key=api_key)
@@ -194,13 +195,29 @@ async def get_title_and_summary(chunk: str, url: str) -> Dict[str, str]:
     Keep both title and summary concise but informative."""
     
     try:
+        response_format = {"type": "json_object"}
+        if [provider.value for provider in LocalLLMProvider]:
+            response_format = {
+                "type": "json_schema",
+                "json_schema": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "summary": {"type": "string"}
+                        },
+                        "required": ["title", "summary"]
+                    }
+                }
+            }
+        
         response = await llm_client.chat.completions.create(
             model=get_env_var("PRIMARY_MODEL") or "gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"URL: {url}\n\nContent:\n{chunk[:1000]}..."}  # Send first 1000 chars for context
             ],
-            response_format={ "type": "json_object" }
+            response_format=response_format
         )
         return json.loads(response.choices[0].message.content)
     except Exception as e:
