@@ -26,7 +26,7 @@ from archon.refiner_agents.prompt_refiner_agent import prompt_refiner_agent
 from archon.refiner_agents.tools_refiner_agent import tools_refiner_agent, ToolsRefinerDeps
 from archon.refiner_agents.agent_refiner_agent import agent_refiner_agent, AgentRefinerDeps
 from archon.agent_tools import list_documentation_pages_tool
-from utils.utils import get_env_var, get_clients
+from utils.utils import get_env_var, get_clients, write_to_thought_process
 
 # Load environment variables
 load_dotenv()
@@ -78,6 +78,7 @@ class AgentState(TypedDict):
 
 # Scope Definition Node with Reasoner LLM
 async def define_scope_with_reasoner(state: AgentState):
+    write_to_thought_process("🧠 Thinking cap on! Brainstorming the scope based on your request... Exploring the possibilities! ✨🗺️")
     # First, get the documentation pages so the reasoner can decide which ones are necessary
     documentation_pages = await list_documentation_pages_tool(supabase)
     documentation_pages_str = "\n".join(documentation_pages)
@@ -110,7 +111,7 @@ async def define_scope_with_reasoner(state: AgentState):
 
     with open(scope_path, "w", encoding="utf-8") as f:
         f.write(scope)
-    
+    write_to_thought_process("Drafting the agent's architectural blueprint! 📝🏗️ Laying the structural foundation.")
     return {"scope": scope}
 
 # Coding Node with Feedback Handling
@@ -130,6 +131,7 @@ async def coder_agent(state: AgentState, writer):
     # The prompt either needs to be the user message (initial agent request or feedback)
     # or the refined prompt/tools/agent if we are in that stage of the agent creation process
     if 'refined_prompt' in state and state['refined_prompt']:
+        write_to_thought_process("On it! ✅ Refining the agent's prompt & tools based on your feedback. 🗣️➡️🛠️")
         prompt = f"""
         I need you to refine the agent you created. 
         
@@ -145,6 +147,7 @@ async def coder_agent(state: AgentState, writer):
         Output any changes necessary to the agent code based on these refinements.
         """
     else:
+        write_to_thought_process("Zeroing in! 🎯 Deciding the precise prompt ✍️ and tools 🛠️ needed to fulfill your request. 👌")
         prompt = state['latest_user_message']
 
     # Run the agent in a stream
@@ -166,6 +169,10 @@ async def coder_agent(state: AgentState, writer):
 
     # Add the new conversation history (including tool calls)
     # Reset the refined properties in case they were just used to refine the agent
+    if 'refined_prompt' in state and state['refined_prompt']:
+        write_to_thought_process("Boom! 💥 Prompt polished ✨, tools equipped ✅. Agent is ready to rock! 🚀🔥...")
+    else:
+        write_to_thought_process("Tuning the agent! ⚙️ Finalizing prompt 🎯 and tools 🛠️ based on your specific request. Almost there! ✨")
     return {
         "messages": [result.new_messages_json()],
         "refined_prompt": "",
@@ -175,8 +182,9 @@ async def coder_agent(state: AgentState, writer):
 
 # Interrupt the graph to get the user's next message
 def get_next_user_message(state: AgentState):
+    write_to_thought_process("Standing by for your thoughts! 👀 Let me know what you think. 👇")
     value = interrupt({})
-
+    write_to_thought_process("Roger that! 👍 Analyzing your feedback... 🤔💡")
     # Set the user's latest message for the LLM to continue the conversation
     return {
         "latest_user_message": value
@@ -184,6 +192,7 @@ def get_next_user_message(state: AgentState):
 
 # Determine if the user is finished creating their AI agent or not
 async def route_user_message(state: AgentState):
+    write_to_thought_process("🧠 Deciding on the optimal next action. 🎯 Standby...")
     prompt = f"""
     The user has sent a message: 
     
@@ -203,6 +212,7 @@ async def route_user_message(state: AgentState):
 # Refines the prompt for the AI agent
 async def refine_prompt(state: AgentState):
     # Get the message history into the format for Pydantic AI
+    write_to_thought_process("Sharpening the agent's instructions! 🎯✏️ Almost there...")
     message_history: list[ModelMessage] = []
     for message_row in state['messages']:
         message_history.extend(ModelMessagesTypeAdapter.validate_json(message_row))
@@ -217,6 +227,7 @@ async def refine_prompt(state: AgentState):
 # Refines the tools for the AI agent
 async def refine_tools(state: AgentState):
     # Prepare dependencies
+    write_to_thought_process("Upgrading the agent's arsenal! 💪 Refining tools to boost capabilities. 🚀")
     deps = ToolsRefinerDeps(
         supabase=supabase,
         embedding_client=embedding_client
@@ -236,6 +247,7 @@ async def refine_tools(state: AgentState):
 
 # Refines the defintion for the AI agent
 async def refine_agent(state: AgentState):
+    write_to_thought_process("Refining the agent's blueprint! 📝 Making its purpose crystal clear. 🎯")
     # Prepare dependencies
     deps = AgentRefinerDeps(
         supabase=supabase,
@@ -256,6 +268,8 @@ async def refine_agent(state: AgentState):
 
 # End of conversation agent to give instructions for executing the agent
 async def finish_conversation(state: AgentState, writer):    
+    # Get the message history into the format for Pydantic AI
+    write_to_thought_process("Putting the final polish on the agent! ✨ Almost ready to go! 👌🤖")
     # Get the message history into the format for Pydantic AI
     message_history: list[ModelMessage] = []
     for message_row in state['messages']:

@@ -1,4 +1,4 @@
-from supabase import Client, create_client
+from supabase import Client, create_client 
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from datetime import datetime
@@ -35,6 +35,41 @@ def write_to_log(message: str):
     log_entry = f"[{timestamp}] {message}\n"
 
     with open(log_path, "a", encoding="utf-8") as f:
+        f.write(log_entry)
+
+
+def get_recent_thought():
+    """Get the recent thought from thought_process.txt."""
+    thought_path = os.path.join(workbench_dir, "thought_process.txt")
+    if os.path.exists(thought_path):
+        with open(thought_path , "r", encoding="utf-8") as f:
+            thoughts = f.readlines()
+        if thoughts:
+            return thoughts[-1].strip().split("]")[1].strip()
+    else:
+        return "Archon is preparing..."
+
+def clear_thought_process():
+    """Clear the thought process file."""
+    thought_process_path = os.path.join(workbench_dir, "thought_process.txt")
+    if os.path.exists(thought_process_path):
+        os.remove(thought_process_path)
+
+
+def write_to_thought_process(message: str):
+    """Write a message to the though_process.txt file in the workbench directory.
+
+    Args:
+        message: The message to log
+    """
+    # Get the directory one level up from the current file
+    thought_process_path = os.path.join(workbench_dir, "thought_process.txt")
+    os.makedirs(workbench_dir, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"[{timestamp}] {message}\n"
+
+    with open(thought_process_path, "a", encoding="utf-8") as f:
         f.write(log_entry)
 
 def get_env_var(var_name: str, profile: Optional[str] = None) -> Optional[str]:
@@ -113,6 +148,8 @@ def save_env_var(var_name: str, value: str, profile: Optional[str] = None) -> bo
     # Initialize the profile if it doesn't exist
     if current_profile not in env_vars["profiles"]:
         env_vars["profiles"][current_profile] = {}
+    else:
+        env_vars["profiles"][current_profile] = env_vars.get("profiles", {}).get(current_profile, {})
     
     # Update the variable in the profile
     env_vars["profiles"][current_profile][var_name] = value
@@ -185,6 +222,16 @@ def set_current_profile(profile_name: str) -> bool:
     except IOError as e:
         write_to_log(f"Error writing to env_vars.json: {str(e)}")
         return False
+
+def get_ollama_models():
+    """Fetches list of installed models from Ollama API."""
+    import requests
+    try:
+        response = requests.get("http://localhost:11434/v1/models")
+        print(response.json())
+        return [model['id'] for model in response.json()["data"]]
+    except (requests.exceptions.RequestException, json.JSONDecodeError):
+        return []
 
 def get_all_profiles() -> list:
     """Get a list of all available environment profiles.
@@ -378,7 +425,17 @@ def reload_archon_graph(show_reload_success=True):
         return True
     except Exception as e:
         st.error(f"Error reloading Archon modules: {str(e)}")
-        return False        
+        return False     
+
+def get_tp_socket():
+    tp_port = get_env_var('TP_PORT') or '8082'
+    return f"http://localhost:{tp_port}"
+
+
+def get_tp_command():
+    venv_path = f"\"{parent_dir}\\.venv\\Scripts\\python.exe\" -m"
+    tp_port = get_env_var('TP_PORT') or '8082'  
+    return f"{venv_path} streamlit run \"{parent_dir}\\thought_stream_v3.py\" --server.port {tp_port} --server.headless True"
 
 def get_clients():
     # LLM client setup
@@ -406,4 +463,5 @@ def get_clients():
             print(f"Failed to initialize Supabase: {e}")
             write_to_log(f"Failed to initialize Supabase: {e}")
 
-    return embedding_client, supabase      
+    return embedding_client, supabase     
+

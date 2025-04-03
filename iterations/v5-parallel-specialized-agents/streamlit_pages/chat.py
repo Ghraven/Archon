@@ -3,6 +3,11 @@ import streamlit as st
 import uuid
 import sys
 import os
+import streamlit.components.v1 as components
+import subprocess
+from utils.utils import clear_thought_process, get_tp_socket, get_tp_command
+from utils.subprocess_helper import is_thought_process_running, run_command
+import threading
 
 # Add the current directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -47,9 +52,13 @@ async def chat_tab():
     if "messages" not in st.session_state:
         st.session_state.messages = []
     
+    # if st.button("Show thought process"):
+    
+    
     # Add a clear conversation button
     if st.button("Clear Conversation"):
         st.session_state.messages = []
+        clear_thought_process()
         st.rerun()
 
     # Display chat messages from history on app rerun
@@ -61,6 +70,15 @@ async def chat_tab():
 
     # Chat input for the user
     user_input = st.chat_input("What do you want to build today?")
+
+    print(f"is_thought_process_running: {is_thought_process_running()}")
+    if is_thought_process_running():
+        components.iframe(get_tp_socket(), height=500, scrolling=False)
+    if not user_input and not is_thought_process_running():
+        if st.button("Click herer to inspect Archon's Decision Matrix ⚙️🧠💡"):
+            print(get_tp_command())
+            threading.Thread(target=run_command, args=(get_tp_command(),), daemon=True).start()
+            st.rerun()
 
     if user_input:
         # We append a new request to the conversation explicitly

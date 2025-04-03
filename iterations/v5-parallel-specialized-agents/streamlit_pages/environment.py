@@ -6,14 +6,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.utils import (
     get_env_var, save_env_var, reload_archon_graph, 
     get_current_profile, set_current_profile, get_all_profiles,
-    create_profile, delete_profile, get_profile_env_vars
+    create_profile, delete_profile, get_profile_env_vars, get_ollama_models
 )
 
 def environment_tab():    
     # Get all available profiles and current profile
     profiles = get_all_profiles()
     current_profile = get_current_profile()
-    
+    ollama_models = []
     # Profile management section
     st.subheader("Profile Management")
     st.write("Profiles allow you to store different sets of environment variables for different providers or use cases.")
@@ -133,6 +133,9 @@ def environment_tab():
         index=llm_providers.index(st.session_state.llm_provider) if st.session_state.llm_provider in llm_providers else 0,
         key="llm_provider_selector"
     )
+
+    if selected_llm_provider == "Ollama":
+        ollama_models = get_ollama_models()
     
     # Update session state if provider changed
     if selected_llm_provider != st.session_state.llm_provider:
@@ -202,10 +205,11 @@ def environment_tab():
         
         # Get current API_KEY or set default for Ollama
         current_api_key = profile_env_vars.get("LLM_API_KEY", "")
-        
+
         # If provider is Ollama and LLM_API_KEY is empty or provider changed, set to NOT_REQUIRED
         if selected_llm_provider == "Ollama" and (not current_api_key or profile_env_vars.get("LLM_PROVIDER", "") != selected_llm_provider):
             current_api_key = "NOT_REQUIRED"
+
         
         # If there's already a value, show asterisks in the placeholder
         placeholder = current_api_key if current_api_key == "NOT_REQUIRED" else "Set but hidden" if current_api_key else ""
@@ -227,12 +231,30 @@ def environment_tab():
                             "Example: gpt-4o-mini\n\n" + \
                             "Example: qwen2.5:14b-instruct-8k"
         
-        primary_model = st.text_input(
-            "PRIMARY_MODEL:",
-            value=profile_env_vars.get("PRIMARY_MODEL", ""),
-            help=primary_model_help,
-            key="input_PRIMARY_MODEL"
-        )
+        if selected_llm_provider == "Ollama":
+            if ollama_models:
+                primary_model = st.selectbox(
+                    "PRIMARY_MODEL:",
+                    index=ollama_models.index(profile_env_vars.get("PRIMARY_MODEL", "")) if profile_env_vars.get("PRIMARY_MODEL", "") in ollama_models else None,
+                    options=ollama_models,
+                    help=primary_model_help,
+                    key="input_PRIMARY_MODEL"
+                )
+            else:
+                st.error("Unable to fetch local Ollama models. Please ensure Ollama is running.")
+                primary_model = st.text_input(
+                "PRIMARY_MODEL:",
+                value=profile_env_vars.get("PRIMARY_MODEL", ""),
+                help=primary_model_help,
+                key="input_PRIMARY_MODEL"
+                )
+        else:
+            primary_model = st.text_input(
+                "PRIMARY_MODEL:",
+                value=profile_env_vars.get("PRIMARY_MODEL", ""),
+                help=primary_model_help,
+                key="input_PRIMARY_MODEL"
+                )
         updated_values["PRIMARY_MODEL"] = primary_model
         
         # REASONER_MODEL
@@ -240,13 +262,40 @@ def environment_tab():
                              "Example: o3-mini\n\n" + \
                              "Example: deepseek-r1:7b-8k"
         
-        reasoner_model = st.text_input(
-            "REASONER_MODEL:",
-            value=profile_env_vars.get("REASONER_MODEL", ""),
-            help=reasoner_model_help,
-            key="input_REASONER_MODEL"
-        )
+        if selected_llm_provider == "Ollama":
+            if ollama_models:
+                reasoner_model = st.selectbox(
+                    "REASONER_MODEL:",
+                    index=ollama_models.index(profile_env_vars.get("REASONER_MODEL", "")) if profile_env_vars.get("REASONER_MODEL", "") in ollama_models else None,
+                    options=ollama_models,
+                    help=reasoner_model_help,
+                    key="input_REASONER_MODEL"
+                )
+            else:
+                st.error("Unable to fetch local Ollama models. Please ensure Ollama is running.")
+                reasoner_model = st.text_input(
+                "REASONER_MODEL:",
+                value=profile_env_vars.get("REASONER_MODEL", ""),
+                help=reasoner_model_help,
+                key="input_REASONER_MODEL"
+            )
+        else:
+            reasoner_model = st.text_input(
+                "REASONER_MODEL:",
+                value=profile_env_vars.get("REASONER_MODEL", ""),
+                help=reasoner_model_help,
+                key="input_REASONER_MODEL"
+            )
         updated_values["REASONER_MODEL"] = reasoner_model
+
+        tp_port_help = "Select thought process port. Default is 8082"
+        tp_port = st.text_input(
+            "Thought Process port config:",
+            value=profile_env_vars.get("TP_PORT", ""),
+            help=tp_port_help,
+            key="input_TP_PORT"
+        )
+        updated_values["TP_PORT"] = tp_port
         
         st.markdown("---")
         

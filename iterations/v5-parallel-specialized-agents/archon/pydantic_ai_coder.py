@@ -18,7 +18,7 @@ from supabase import Client
 
 # Add the parent directory to sys.path to allow importing from the parent directory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.utils import get_env_var
+from utils.utils import get_env_var, write_to_thought_process
 from archon.agent_prompts import primary_coder_prompt
 from archon.agent_tools import (
     retrieve_relevant_documentation_tool,
@@ -70,6 +70,7 @@ async def retrieve_relevant_documentation(ctx: RunContext[PydanticAIDeps], user_
     Returns:
         A formatted string containing the top 4 most relevant documentation chunks
     """
+    write_to_thought_process("Tapping into the knowledge base... 📚💡 Retrieving relevant documentation for you.")
     return await retrieve_relevant_documentation_tool(ctx.deps.supabase, ctx.deps.embedding_client, user_query)
 
 @pydantic_ai_coder.tool
@@ -80,6 +81,7 @@ async def list_documentation_pages(ctx: RunContext[PydanticAIDeps]) -> List[str]
     Returns:
         List[str]: List of unique URLs for all documentation pages
     """
+    write_to_thought_process("Generating documentation list... ⚙️📄 Available pages incoming!")
     return await list_documentation_pages_tool(ctx.deps.supabase)
 
 @pydantic_ai_coder.tool
@@ -94,4 +96,5 @@ async def get_page_content(ctx: RunContext[PydanticAIDeps], url: str) -> str:
     Returns:
         str: The complete page content with all chunks combined in order
     """
+    write_to_thought_process(f"Absorbing the info... 🧠💡 Reading the docs at {url}.")
     return await get_page_content_tool(ctx.deps.supabase, url)

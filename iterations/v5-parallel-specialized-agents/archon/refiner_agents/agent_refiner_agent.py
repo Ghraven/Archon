@@ -32,7 +32,7 @@ provider = get_env_var('LLM_PROVIDER') or 'OpenAI'
 llm = get_env_var('PRIMARY_MODEL') or 'gpt-4o-mini'
 base_url = get_env_var('BASE_URL') or 'https://api.openai.com/v1'
 api_key = get_env_var('LLM_API_KEY') or 'no-llm-api-key-provided'
-
+print(f"llm:{llm}, \n provider:{provider}")
 model = AnthropicModel(llm, api_key=api_key) if provider == "Anthropic" else OpenAIModel(llm, base_url=base_url, api_key=api_key)
 embedding_model = get_env_var('EMBEDDING_MODEL') or 'text-embedding-3-small'
 
