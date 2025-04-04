@@ -112,7 +112,7 @@ pydantic==2.10.5
 pydantic-ai==0.0.22
 pydantic-ai-slim==0.0.22
 pydantic-extra-types==2.10.2
-pydantic-graph==0.0.22
+pydantic-graph==0.0.52
 pydantic-settings==2.7.1
 pydantic_core==2.27.2
 pydeck==0.9.1
