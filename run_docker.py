@@ -118,9 +118,16 @@ def main():
     
     # Run the Archon container
     print("\n=== Starting Archon container ===")
+    # Get the base directory
+    base_dir = Path(__file__).parent.absolute()
+    
+    # Define the volume mount
+    volume_mount = f"{base_dir}/workbench:/app/archon/workbench"
+    
     cmd = [
-        "docker", "run", "-d",
+        "docker", "run",
         "--name", "archon-container",
+        "-v", volume_mount,
         "-p", "8501:8501",
         "-p", "8100:8100",
         "--add-host", "host.docker.internal:host-gateway"
