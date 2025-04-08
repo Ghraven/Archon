@@ -114,7 +114,7 @@ pydantic-ai-slim==0.0.22
 pydantic-extra-types==2.10.2
 pydantic-graph==0.0.52
 pydantic-settings==2.7.1
-pydantic_core==2.27.2
+pydantic_core==2.33.1
 pydeck==0.9.1
 pyee==12.0.0
 Pygments==2.19.1
