@@ -116,7 +116,7 @@ pydantic-graph==0.0.52
 pydantic-settings==2.7.1
 pydantic_core==2.33.1
 pydeck==0.9.1
-pyee==12.0.0
+pyee==13.0.0
 Pygments==2.19.1
 PyJWT==2.10.1
 pyOpenSSL==24.3.0
